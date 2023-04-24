@@ -1,0 +1,2 @@
+# Warming Stripes visualisation
+
