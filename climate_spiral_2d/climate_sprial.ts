@@ -31,7 +31,7 @@ const zeroGradRadius = oneGradRadius * .5;
 const labelRadius = oneGradRadius * 1.15;
 
 
-const slider = document.getElementById("myRange")!;
+const slider = document.getElementById("rangeInput")!;
 
 // Update the current slider value (each time you drag the slider handle)
 slider.oninput = function() {

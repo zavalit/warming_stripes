@@ -2,3 +2,4 @@ dist
 node_modules
 .parcel-cach
 climate_spiral_2d/.parcel-cache
+.parcel-cache
