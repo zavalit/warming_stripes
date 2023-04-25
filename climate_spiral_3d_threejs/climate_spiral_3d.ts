@@ -103,15 +103,44 @@ function interpolateColor(color1, color2, factor) {
 
   const spiralMesh = new THREE.Line(spiralGeometry, spiralMaterial);
 
-  let yearLabels: THREE.Mesh[] = [];
+	const obtainSpiralY = (i) => {
+		const k = i / dataPoints.length;
+		return spiralHeight * k - spiralHeight * 0.5;
+	};
+
+  const yearLabels: THREE.Mesh[] = [];
+    for (const i in dataPoints) {
+      const { year, monthIndex } = dataPoints[i];
+
+      if (year % 20 === 0 && monthIndex === 1) {
+        const textGeometry = new TextGeometry(year.toString(), {
+          //@ts-ignore
+          font: font,
+          size: 2,
+          height: 0.2,
+        });
+        const textMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffffff,
+          emissive: 0x000000,
+          specular: 0x111111,
+        });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+        const y = obtainSpiralY(i);
+        const x = oneGradRadius * 1.3;
+
+        textMesh.position.x = x;
+        textMesh.position.y = y;
+				textMesh.visible = false
+        scene.add(textMesh);
+				
+        yearLabels.push(textMesh);
+      }
+    }
 
   const buildSpiral = () => {
     const dataPointsOI = dataPoints.slice(0, PARAMS.progress);
-
-    const obtainSpiralY = (i) => {
-      const k = i / dataPoints.length;
-      return spiralHeight * k - spiralHeight * 0.5;
-    };
+   
 
     const colors = [];
     const positions = dataPointsOI
@@ -158,34 +187,6 @@ function interpolateColor(color1, color2, factor) {
     // Add the spiral mesh to the scene
     scene.add(spiralMesh);
 
-    // Month Lables
-
-    for (const i in dataPointsOI) {
-      const { year, monthIndex } = dataPointsOI[i];
-
-      if (year % 20 === 0 && monthIndex === 1) {
-        const textGeometry = new TextGeometry(year.toString(), {
-          //@ts-ignore
-          font: font,
-          size: 2,
-          height: 0.2,
-        });
-        const textMaterial = new THREE.MeshPhongMaterial({
-          color: 0xffffff,
-          emissive: 0x000000,
-          specular: 0x111111,
-        });
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-        const y = obtainSpiralY(i);
-        const x = oneGradRadius * 1.3;
-
-        textMesh.position.x = x;
-        textMesh.position.y = y;
-        scene.add(textMesh);
-        yearLabels.push(textMesh);
-      }
-    }
   };
 
   const controlLabelVisibility = () => {
