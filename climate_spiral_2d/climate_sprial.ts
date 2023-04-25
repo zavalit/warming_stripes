@@ -30,11 +30,6 @@ const labelRadius = oneGradRadius * 1.15;
 
 const slider = document.getElementById("rangeInput")!;
 
-// Update the current slider value (each time you drag the slider handle)
-slider.oninput = function () {
-  PARAMS.progress = this.value!;
-};
-
 (async () => {
   const { monthes, dataPoints } = await dataInput();
   slider.setAttribute("max", dataPoints.length);
@@ -130,6 +125,7 @@ slider.oninput = function () {
   };
 
   slider.oninput = function () {
+    //@ts-ignore
     PARAMS.progress = this.value;
     renderSpiral();
   };

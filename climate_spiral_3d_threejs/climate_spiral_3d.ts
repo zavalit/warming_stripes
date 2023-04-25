@@ -67,12 +67,13 @@ function interpolateColor(color1, color2, factor) {
   const spiralHeight = 50; // Height of the spiral
 
   // Create an array to hold the month labels
-  const monthLabels = [];
+  const monthLabels: THREE.Mesh[] = [];
 
   // Add the month labels to the scene
   for (let i = 0; i < monthes.length; i++) {
     const { label, angle } = monthes[i];
     const textGeometry = new TextGeometry(label, {
+      // @ts-ignore
       font: font,
       size: 2,
       height: 0.2,
@@ -102,7 +103,7 @@ function interpolateColor(color1, color2, factor) {
 
   const spiralMesh = new THREE.Line(spiralGeometry, spiralMaterial);
 
-  let yearLabels = [];
+  let yearLabels: THREE.Mesh[] = [];
 
   const buildSpiral = () => {
     const dataPointsOI = dataPoints.slice(0, PARAMS.progress);
@@ -124,7 +125,7 @@ function interpolateColor(color1, color2, factor) {
         const y = obtainSpiralY(i);
 
         // Calculate the color based on the x position
-        let color;
+        let color: THREE.Color;
         if (mean < zeroGradRadius) {
           color = interpolateColor(blue, white, mean / zeroGradRadius);
         } else if (mean < 2 * zeroGradRadius) {
@@ -137,6 +138,7 @@ function interpolateColor(color1, color2, factor) {
           color = red;
         }
 
+        //@ts-ignore
         colors.push(color.r, color.g, color.b);
 
         return [x, y, z];
@@ -163,6 +165,7 @@ function interpolateColor(color1, color2, factor) {
 
       if (year % 20 === 0 && monthIndex === 1) {
         const textGeometry = new TextGeometry(year.toString(), {
+          //@ts-ignore
           font: font,
           size: 2,
           height: 0.2,
@@ -239,6 +242,7 @@ function interpolateColor(color1, color2, factor) {
 
   // Update the current slider value (each time you drag the slider handle)
   slider.oninput = function () {
+    // @ts-ignore
     PARAMS.progress = this.value!;
     buildSpiral();
   };

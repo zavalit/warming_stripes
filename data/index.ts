@@ -1,3 +1,4 @@
+//@ts-ignore
 import csvDataUrl from "url:./globalMeans.csv";
 
 // This will parse a delimited string into an array of
@@ -25,11 +26,11 @@ function csvToArray(strData, strDelimiter) {
 
   // Create an array to hold our data. Give the array
   // a default empty first row.
-  var arrData = [[]];
+  const arrData: string[][] = [[]];
 
   // Create an array to hold our individual pattern
   // matching groups.
-  var arrMatches = null;
+  let arrMatches: RegExpExecArray | null = null;
 
   // Keep looping over the regular expression matches
   // until we can no longer find a match.
@@ -50,13 +51,14 @@ function csvToArray(strData, strDelimiter) {
     // Now that we have our delimiter out of the way,
     // let's check to see which kind of value we
     // captured (quoted or unquoted).
+    let strMatchedValue: string;
     if (arrMatches[2]) {
       // We found a quoted value. When we capture
       // this value, unescape any double quotes.
-      var strMatchedValue = arrMatches[2].replace(new RegExp('""', "g"), '"');
+      strMatchedValue = arrMatches[2].replace(new RegExp('""', "g"), '"');
     } else {
       // We found a non-quoted value.
-      var strMatchedValue = arrMatches[3];
+      strMatchedValue = arrMatches[3];
     }
 
     // Now that we have our value string, let's add
