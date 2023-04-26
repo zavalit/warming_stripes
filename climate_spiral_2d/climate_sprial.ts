@@ -24,7 +24,7 @@ ctx.fillStyle = "white";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 
-const oneGradRadius = 450;
+const oneGradRadius = 400;
 const zeroGradRadius = oneGradRadius * 0.5;
 const labelRadius = oneGradRadius * 1.15;
 
@@ -129,8 +129,12 @@ const slider = document.getElementById("rangeInput")!;
     PARAMS.progress = this.value;
     renderSpiral();
   };
+  //renderSpiral();
 
-  renderSpiral();
+  const animate = (timestamp) => {
+    requestAnimationFrame(animate);
+    riseTheRange(slider, dataPoints, 2000 - timestamp);
+  };
 })();
 
 function lerpColor(color1, color2, weight) {
@@ -176,5 +180,21 @@ const debugTemperatureColor = () => {
       (i - 0.49) * Math.PI
     );
     ctx.stroke();
+  }
+};
+
+const riseTheRange = (slider, dataPoints, defer = 0) => {
+  if (defer >= 0) {
+    return;
+  }
+  if (PARAMS.progress < dataPoints.length) {
+    const _v = slider.getAttribute("value") || "0";
+    slider.setAttribute("value", parseInt(_v) + 2);
+    var event = new Event("input", {
+      bubbles: true,
+      cancelable: true,
+    });
+
+    slider.dispatchEvent(event);
   }
 };

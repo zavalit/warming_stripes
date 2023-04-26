@@ -17,7 +17,7 @@ const width = 600;
 const height = 600;
 
 // Create an orthographic camera
-const cameraWidth = 90; // Width of the camera's view
+const cameraWidth = 70; // Width of the camera's view
 const cameraHeight = cameraWidth * (height / width); // Height of the camera's view, adjusted for the aspect ratio
 const camera = new THREE.OrthographicCamera(
   cameraWidth / -2, // Left
@@ -103,44 +103,68 @@ function interpolateColor(color1, color2, factor) {
 
   const spiralMesh = new THREE.Line(spiralGeometry, spiralMaterial);
 
-	const obtainSpiralY = (i) => {
-		const k = i / dataPoints.length;
-		return spiralHeight * k - spiralHeight * 0.5;
-	};
+  const obtainSpiralY = (i) => {
+    const k = i / dataPoints.length;
+    return spiralHeight * k - spiralHeight * 0.5;
+  };
+
+  // Create the geometry for the ruler
+  const rulerGeometry = new THREE.BufferGeometry();
+  const rulerVertices: THREE.Vector3[] = [];
+
+  // Create the material for the ruler
+  const rulerMaterial = new THREE.LineBasicMaterial({
+    color: 0x666666,
+  });
+
+  // Create the ruler object and add it to the scene
+  const ruler = new THREE.Line(rulerGeometry, rulerMaterial);
+  scene.add(ruler);
 
   const yearLabels: THREE.Mesh[] = [];
-    for (const i in dataPoints) {
-      const { year, monthIndex } = dataPoints[i];
 
-      if (year % 20 === 0 && monthIndex === 1) {
-        const textGeometry = new TextGeometry(year.toString(), {
-          //@ts-ignore
-          font: font,
-          size: 2,
-          height: 0.2,
-        });
-        const textMaterial = new THREE.MeshPhongMaterial({
-          color: 0xffffff,
-          emissive: 0x000000,
-          specular: 0x111111,
-        });
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+  for (const i in dataPoints) {
+    const { year, monthIndex } = dataPoints[i];
+    const x = oneGradRadius * 1.3;
+    const y = obtainSpiralY(i);
+    const rx = x - 4;
+    const ry = y + 1;
 
-        const y = obtainSpiralY(i);
-        const x = oneGradRadius * 1.3;
+    if (year % 20 === 0 && monthIndex === 1) {
+      const textGeometry = new TextGeometry(year.toString(), {
+        //@ts-ignore
+        font: font,
+        size: 1.5,
+        height: 0.2,
+      });
+      const textMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+      });
+      const textMesh = new THREE.Mesh(textGeometry, textMaterial);
 
-        textMesh.position.x = x;
-        textMesh.position.y = y;
-				textMesh.visible = false
-        scene.add(textMesh);
-				
-        yearLabels.push(textMesh);
-      }
+      textMesh.position.x = x;
+      textMesh.position.y = y;
+      textMesh.visible = false;
+      scene.add(textMesh);
+
+      yearLabels.push(textMesh);
+
+      rulerVertices.push(new THREE.Vector3(rx, ry, 0));
+      rulerVertices.push(new THREE.Vector3(rx + 2, ry, 0));
+      rulerVertices.push(new THREE.Vector3(rx, ry, 0));
     }
+
+    if (year % 10 === 0 && monthIndex === 1) {
+      rulerVertices.push(new THREE.Vector3(rx, ry, 0));
+      rulerVertices.push(new THREE.Vector3(rx + 1, ry, 0));
+      rulerVertices.push(new THREE.Vector3(rx, ry, 0));
+    }
+  }
+
+  rulerGeometry.setFromPoints(rulerVertices);
 
   const buildSpiral = () => {
     const dataPointsOI = dataPoints.slice(0, PARAMS.progress);
-   
 
     const colors = [];
     const positions = dataPointsOI
@@ -186,7 +210,6 @@ function interpolateColor(color1, color2, factor) {
 
     // Add the spiral mesh to the scene
     scene.add(spiralMesh);
-
   };
 
   const controlLabelVisibility = () => {
@@ -203,7 +226,7 @@ function interpolateColor(color1, color2, factor) {
         label.visible = true;
       });
       yearLabels.forEach((label) => {
-        label.visible = false;
+        label.visible = ruler.visible = false;
       });
     } else {
       // Hide the month labels
@@ -211,7 +234,7 @@ function interpolateColor(color1, color2, factor) {
         label.visible = false;
       });
       yearLabels.forEach((label) => {
-        label.visible = true;
+        label.visible = ruler.visible = true;
       });
     }
   };
@@ -227,19 +250,20 @@ function interpolateColor(color1, color2, factor) {
 
   const controls = new OrbitControls(camera, renderer.domElement);
 
-  const animate = () => {
+  const animate = (timestamp) => {
     requestAnimationFrame(animate);
 
     controls.update();
     controlLabelVisibility();
-    // Render the scene
+
+    //riseTheRange(slider, dataPoints, 2000 - timestamp)
 
     renderer.render(scene, camera);
   };
 
   buildSpiral();
 
-  animate();
+  animate(0);
 
   // Update the current slider value (each time you drag the slider handle)
   slider.oninput = function () {
@@ -248,3 +272,19 @@ function interpolateColor(color1, color2, factor) {
     buildSpiral();
   };
 })();
+
+const riseTheRange = (slider, dataPoints, defer = 0) => {
+  if (defer >= 0) {
+    return;
+  }
+  if (PARAMS.progress < dataPoints.length) {
+    const _v = slider.getAttribute("value") || "0";
+    slider.setAttribute("value", parseInt(_v) + 2);
+    var event = new Event("input", {
+      bubbles: true,
+      cancelable: true,
+    });
+
+    slider.dispatchEvent(event);
+  }
+};
