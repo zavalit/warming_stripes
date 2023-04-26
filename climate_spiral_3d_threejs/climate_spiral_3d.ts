@@ -4,6 +4,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { FontLoader, Font } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
+import { createSpiral, provisionSpiral } from "./spiral";
+
 const PARAMS = {
   progress: 0,
   width: 600,
@@ -41,16 +43,6 @@ renderer.setClearColor(0x000000, 0);
 renderer.setSize(PARAMS.height, PARAMS.width);
 document.body.appendChild(renderer.domElement);
 
-const white = new THREE.Color(0xffffff);
-const blue = new THREE.Color(0x0000ff);
-const red = new THREE.Color(0xff0000);
-
-function interpolateColor(color1, color2, factor) {
-  const result = color1.clone();
-  result.lerp(color2, factor);
-  return result;
-}
-
 interface DataPoint {
   year: number;
   monthIndex: number;
@@ -62,12 +54,14 @@ interface Month {
 }
 
 interface Data {
-  monthes: Month[]
-  dataPoints: DataPoint[]
+  monthes: Month[];
+  dataPoints: DataPoint[];
 }
 
-function createLabels({monthes, dataPoints}: Data, font: Font): [THREE.Group, THREE.Group, THREE.Line] {
-  
+function createLabels(
+  { monthes, dataPoints }: Data,
+  font: Font
+): [THREE.Group, THREE.Group, THREE.Line] {
   // Create the geometry for the ruler
   const rulerGeometry: THREE.BufferGeometry = new THREE.BufferGeometry();
 
@@ -79,14 +73,16 @@ function createLabels({monthes, dataPoints}: Data, font: Font): [THREE.Group, TH
   // Create the ruler object and add it to the scene
   const ruler: THREE.Line = new THREE.Line(rulerGeometry, rulerMaterial);
 
-  const monthLabels: THREE.Group = new THREE.Group()
-  for(const {label, angle} of monthes){
+  const monthLabels: THREE.Group = new THREE.Group();
+  for (const { label, angle } of monthes) {
     const textGeometry: TextGeometry = new TextGeometry(label, {
       font,
       size: 2,
       height: 0.2,
     });
-    const textMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const textMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+    });
     const textMesh: THREE.Mesh = new THREE.Mesh(textGeometry, textMaterial);
 
     const labelPos: THREE.Vector3 = new THREE.Vector3(
@@ -98,7 +94,7 @@ function createLabels({monthes, dataPoints}: Data, font: Font): [THREE.Group, TH
     textMesh.position.copy(labelPos);
     textMesh.rotation.x -= Math.PI / 2;
 
-    monthLabels.add(textMesh)
+    monthLabels.add(textMesh);
   }
 
   const yearLabels: THREE.Group = new THREE.Group();
@@ -116,9 +112,11 @@ function createLabels({monthes, dataPoints}: Data, font: Font): [THREE.Group, TH
         size: 1.5,
         height: 0.2,
       });
-      const textMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-      });
+      const textMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial(
+        {
+          color: 0xffffff,
+        }
+      );
       const textMesh: THREE.Mesh = new THREE.Mesh(textGeometry, textMaterial);
 
       textMesh.position.x = x;
@@ -137,60 +135,13 @@ function createLabels({monthes, dataPoints}: Data, font: Font): [THREE.Group, TH
       rulerVertices.push(new THREE.Vector3(rx + 1, ry, 0));
       rulerVertices.push(new THREE.Vector3(rx, ry, 0));
     }
-  })
+  });
   rulerGeometry.setFromPoints(rulerVertices);
 
   return [monthLabels, yearLabels, ruler];
 }
 
-const provisionSpiral = ({monthes, dataPoints}, mesh) => {
-  const dataPointsOI = dataPoints.slice(0, PARAMS.progress);
-
-  const colors = [];
-  const positions = dataPointsOI
-    .map(({ value, monthIndex }, i) => {
-      const { angle } = monthes[monthIndex];
-
-      const mean = PARAMS.zeroGradRadius * (1 + value);
-      const x = mean * Math.cos(angle);
-      const z = mean * Math.sin(angle);
-
-      const y = PARAMS.spiralHeight * (i / dataPoints.length - 0.5);
-
-      // Calculate the color based on the x position
-      let color: THREE.Color;
-      if (mean < PARAMS.zeroGradRadius) {
-        color = interpolateColor(blue, white, mean / PARAMS.zeroGradRadius);
-      } else if (mean < 2 * PARAMS.zeroGradRadius) {
-        color = interpolateColor(
-          white,
-          red,
-          (mean - PARAMS.zeroGradRadius) / PARAMS.zeroGradRadius
-        );
-      } else {
-        color = red;
-      }
-
-      //@ts-ignore
-      colors.push(color.r, color.g, color.b);
-
-      return [x, y, z];
-    })
-    .flat();
-
-  // Create the spiral mesh
-  mesh.geometry.setAttribute(
-    "color",
-    new THREE.Float32BufferAttribute(colors, 3)
-  ); // set the colors attribute of the geometry
-  mesh.geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
- 
-};
-
-const controlLabelVisibility = (monthLabels, yearLabels,ruler) => {
+const controlLabelVisibility = (monthLabels, yearLabels, ruler) => {
   // Check if the camera is looking from above
   const cameraLook = new THREE.Vector3();
   camera.getWorldDirection(cameraLook);
@@ -203,7 +154,7 @@ const controlLabelVisibility = (monthLabels, yearLabels,ruler) => {
     monthLabels.children.forEach((label) => {
       label.visible = true;
     });
-    
+
     yearLabels.children.forEach((label) => {
       label.visible = ruler.visible = false;
     });
@@ -212,7 +163,7 @@ const controlLabelVisibility = (monthLabels, yearLabels,ruler) => {
     monthLabels.children.forEach((label) => {
       label.visible = false;
     });
-    
+
     yearLabels.children.forEach((label) => {
       label.visible = ruler.visible = true;
     });
@@ -220,51 +171,32 @@ const controlLabelVisibility = (monthLabels, yearLabels,ruler) => {
 };
 
 const loadFont = async () => {
-
   const fontLoader = new FontLoader();
-  const font: void | Font = await new Promise((resolve: (font: Font) => any) => {
-    fontLoader.load(
-      "https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json",
-      resolve
-    );
-  }).catch((e: Error) => console.error(e))
-  
+  const font: void | Font = await new Promise(
+    (resolve: (font: Font) => any) => {
+      fontLoader.load(
+        "https://cdn.jsdelivr.net/npm/three/examples/fonts/helvetiker_regular.typeface.json",
+        resolve
+      );
+    }
+  ).catch((e: Error) => console.error(e));
+
   return font;
-}
-
-const createSpiral = (data) => {
-  // Create the spiral geometry
-  const spiralGeometry = new THREE.BufferGeometry();
-  // Create the material for the spiral
-  const spiralMaterial = new THREE.LineBasicMaterial({
-    linewidth: 2,
-    vertexColors: true,
-  });
-  const mesh = new THREE.Line(spiralGeometry, spiralMaterial);
-
-  provisionSpiral(data, mesh)
-
-  return mesh;
-
-}
-
+};
 
 (async () => {
-  
   const data = await dataInput();
   slider.setAttribute("max", data.dataPoints.length);
-  
-  const font = await loadFont();
-  
-  const [monthLabels, yearLabels, ruler] = createLabels(data, font as Font)
-  scene.add(monthLabels)
-  scene.add(yearLabels);
-  scene.add(ruler)
- 
-  
-  const spiral = createSpiral(data)  
-  scene.add(spiral);
 
+  const font = await loadFont();
+
+  const [monthLabels, yearLabels, ruler] = createLabels(data, font as Font);
+  scene.add(monthLabels);
+  scene.add(yearLabels);
+  scene.add(ruler);
+
+  const spiral = createSpiral(data, PARAMS.progress);
+  scene.add(spiral);
 
   // Add a directional light to the scene
   const light = new THREE.DirectionalLight(0xffffff, 1);
@@ -288,14 +220,13 @@ const createSpiral = (data) => {
     renderer.render(scene, camera);
   };
 
-
   animate(0);
 
   // Update the current slider value (each time you drag the slider handle)
   slider.oninput = function () {
     // @ts-ignore
     PARAMS.progress = this.value!;
-    provisionSpiral(data, spiral);
+    provisionSpiral(data, spiral, PARAMS);
   };
 })();
 
